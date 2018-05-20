@@ -1,46 +1,96 @@
 /**
  * Created by jackzet on 19/05/2018.
  */
-import java.net.*;
-import java.io.*;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-public class Server {
+public class Server implements Runnable
+{
 
-    private DatagramSocket serverSocket;
-    private ArrayList<Client> clients;
-    private byte[] receiveData;
-    int B = 4;
+	private boolean running = false;
+	private int B = 4;
+	private int nextPacketID;
+	private byte[] buf = new byte[4+8+4+B];
+	private ArrayList<Client> clients;
+	private DatagramSocket serverSocket;
 
-    public void start(int port){
-        clients = new ArrayList<>();
+	public Server(int port)
+	{
+		try
+		{
+			serverSocket = new DatagramSocket(port);
+			clients = new ArrayList<>();
+		}
+		catch(SocketException e)
+		{
+			e.printStackTrace();
+		}
+	}
 
+	@Override
+	public void run()
+	{
+		running = true;
+		nextPacketID = 0;
+		FileOutputStream fos = null;
+		try
+		{
+			fos = new FileOutputStream("test.txt");
+		}
+		catch(FileNotFoundException e)
+		{
+			e.printStackTrace();
+		}
+		while(running)
+		{
+			try
+			{
+				PacketDecoder pd;
+				DatagramPacket receivedPacket = new DatagramPacket(buf, buf.length);
+				serverSocket.receive(receivedPacket);
+				pd = new PacketDecoder(ByteBuffer.wrap(receivedPacket.getData()));
 
+				if(pd.getPacketID() == nextPacketID)
+				{
+					fos.write(pd.getData());
+					//fos.flush(); // This this needed??
+				}
 
-        try{
-            serverSocket = new DatagramSocket(port);
-            receiveData = new byte[1024];
+				if(pd.getPacketID() == Math.ceil(pd.getSizeOfData()/B)) //Assuming no packet loss. This will not with with packet loss.
+				{
+					running = false;
+				}
 
-            while(true){
-                DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                serverSocket.receive(receivePacket);
-                ByteBuffer bb = ByteBuffer.wrap(receiveData);
-            }
+				// Create a packet, we send back to the client to confirm the server received it.
+				// The packet will contain the packetID of the received packet.
+				DatagramPacket ackpacket = new DatagramPacket(ByteBuffer.allocate(4).putInt(pd.getPacketID()).array(), buf.length, receivedPacket
+						.getAddress(), receivedPacket.getPort());
+			}
+			catch(IOException e)
+			{
+				e.printStackTrace();
+			}
+		}
+	}
 
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+	public void stop()
+	{
+		try
+		{
+			serverSocket.close();
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
 
-
-    }
-
-    public void stop(){
-        try{
-            serverSocket.close();
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-
-    }
+	}
 }
