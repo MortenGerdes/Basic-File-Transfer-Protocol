@@ -38,10 +38,10 @@ public class Client
 		ByteBuffer fileBuffer = ByteBuffer.wrap(Files.readAllBytes(file.toPath()));
 
 		System.out.println("Size of File: " + file.length() + "bytes");
-		for(int i = 0; i < Math.ceil(file.length()/B); i++)
+		for(int i = 0; i < Math.ceil(file.length()/B)+1; i++)
 		{
-			int from = (int) (i*Math.ceil(file.length()/B));
-			int to = (int) ((i+1)*Math.ceil(file.length()/B))-1;
+			int from = (int) (i*B);
+			int to = (int) ((i+1)*B)-1;
 			int size = (int) (4 + 8 + 4 + Math.ceil(file.length()/B));
 
 			ByteBuffer packetBuffer = ByteBuffer.wrap(sendData);
@@ -49,9 +49,9 @@ public class Client
 			packetBuffer.putInt((int) file.length());
 			packetBuffer.putInt((int) file.length() / B);
 
-			if(i == Math.ceil(file.length()/B)-1)
+			if(i == Math.ceil(file.length()/B))
 			{
-				System.out.println("Sends final packet");
+				System.out.println("Sends final packet from " + from + " to " + fileBuffer.array().length);
 				packetBuffer.put(Arrays.copyOfRange(fileBuffer.array(), from, fileBuffer.array().length));
 				clientSocket.send(new DatagramPacket(packetBuffer.array(), size, IPAddress, port));
 			}
