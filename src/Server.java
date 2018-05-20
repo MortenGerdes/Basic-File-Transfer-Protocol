@@ -6,9 +6,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketException;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
@@ -58,10 +56,11 @@ public class Server implements Runnable
 				DatagramPacket receivedPacket = new DatagramPacket(buf, buf.length);
 				System.out.println("Listening for packets");
 				serverSocket.receive(receivedPacket);
-				System.out.println("Got Packet with ID " + (nextPacketID));
 				pd = new PacketDecoder(ByteBuffer.wrap(receivedPacket.getData()));
+				System.out.println("Got Packet with ID " + (pd.getPacketID()));
 				if(pd.getPacketID() == nextPacketID)
 				{
+					System.out.println("went here 1");
 					nextPacketID++;
 					fos.write(pd.getData());
 					//fos.flush(); // Is this needed??
@@ -69,6 +68,7 @@ public class Server implements Runnable
 
 				if(pd.getPacketID() == Math.ceil(pd.getSizeOfData()/B)) //Assuming no packet loss. This will not work with packet loss.
 				{
+					System.out.println("went here 2");
 					fos.flush();
 					running = false;
 				}

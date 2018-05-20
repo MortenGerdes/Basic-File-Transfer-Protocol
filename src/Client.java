@@ -13,24 +13,26 @@ import java.util.Random;
  */
 public class Client
 {
-	int R;
-	int ip;
-	int port;
-	int B = 4;
-	File file;
-	Random random;
+	private int R;
+	private int ip;
+	private int clientPort;
+    private int serverPort;
+	private int B = 4;
+	private File file;
+	private Random random;
 
-	public Client(int port)
+	public Client(int clientPort, int serverPort)
 	{
-		random = new Random();
-		R = random.nextInt(100);
-		ip = this.ip;
-		port = this.port;
+		this.random = new Random();
+		this.R = random.nextInt(100);
+		this.ip = this.ip;
+		this.clientPort = clientPort;
+		this.serverPort = serverPort;
 	}
 
 	public void connect() throws IOException
 	{
-		DatagramSocket clientSocket = new DatagramSocket();
+		DatagramSocket clientSocket = new DatagramSocket(clientPort);
 		InetAddress IPAddress = InetAddress.getByName("localhost");
 
 		byte[] sendData = new byte[4+8+4+26];
@@ -46,20 +48,20 @@ public class Client
 
 			ByteBuffer packetBuffer = ByteBuffer.wrap(sendData);
 			packetBuffer.putInt(R);
-			packetBuffer.putInt((int) file.length());
-			packetBuffer.putInt((int) file.length() / B);
+			packetBuffer.putLong(file.length());
+			packetBuffer.putInt(i);
 
 			if(i == Math.ceil(file.length()/B))
 			{
 				System.out.println("Sends final packet from " + from + " to " + fileBuffer.array().length);
 				packetBuffer.put(Arrays.copyOfRange(fileBuffer.array(), from, fileBuffer.array().length));
-				clientSocket.send(new DatagramPacket(packetBuffer.array(), size, IPAddress, port));
+				clientSocket.send(new DatagramPacket(packetBuffer.array(), size, IPAddress, serverPort));
 			}
 			else
 			{
 				packetBuffer.put(Arrays.copyOfRange(fileBuffer.array(), from, to));
 				System.out.println("Sends packet from " + from + " to " + to);
-				clientSocket.send(new DatagramPacket(packetBuffer.array(), size, IPAddress, port));
+				clientSocket.send(new DatagramPacket(packetBuffer.array(), size, IPAddress, serverPort));
 			}
 		}
 	}
