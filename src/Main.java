@@ -1,8 +1,17 @@
+import java.io.IOException;
+
 public class Main
 {
 
-	public static void main(String[] args)
+	public static void main(String[] args) throws IOException, InterruptedException
 	{
-		System.out.println("Write my assignment, Jack <3");
+		Server server = new Server(1337);
+		Thread t = new Thread(server);
+		t.start();
+
+		Thread.sleep(2000);
+
+		Client client = new Client(1337);
+		client.connect();
 	}
 }
