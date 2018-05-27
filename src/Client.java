@@ -35,15 +35,15 @@ public class Client
 		DatagramSocket clientSocket = new DatagramSocket(clientPort);
 		InetAddress IPAddress = InetAddress.getByName("localhost");
 
-		byte[] sendData = new byte[4+8+4+26];
 		file = new File("hello");
 		ByteBuffer fileBuffer = ByteBuffer.wrap(Files.readAllBytes(file.toPath()));
 
 		System.out.println("Size of File: " + file.length() + "bytes");
 		for(int i = 0; i < Math.ceil(file.length()/B)+1; i++)
 		{
+			byte[] sendData = new byte[(int) (4 + 8 + 4 + Math.ceil(file.length()/B))];
 			int from = (int) (i*B);
-			int to = (int) ((i+1)*B)-1;
+			int to = (int) (((i+1)*B));
 			int size = (int) (4 + 8 + 4 + Math.ceil(file.length()/B));
 
 			ByteBuffer packetBuffer = ByteBuffer.wrap(sendData);
@@ -64,5 +64,6 @@ public class Client
 				clientSocket.send(new DatagramPacket(packetBuffer.array(), size, IPAddress, serverPort));
 			}
 		}
+		clientSocket.close();
 	}
 }

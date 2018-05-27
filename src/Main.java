@@ -13,5 +13,6 @@ public class Main
 
 		Client client = new Client(1337, 1338);
 		client.connect();
+		t.join();
 	}
 }

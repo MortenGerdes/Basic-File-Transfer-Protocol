@@ -27,6 +27,6 @@ public class PacketDecoder
 
 	public byte[] getData()
 	{
-		return Arrays.copyOfRange(bb.array(), 16, bb.array().length-1);
+		return Arrays.copyOfRange(bb.array(), 16, bb.array().length);
 	}
 }

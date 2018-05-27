@@ -63,7 +63,6 @@ public class Server implements Runnable
 					System.out.println("went here 1");
 					nextPacketID++;
 					fos.write(pd.getData());
-					//fos.flush(); // Is this needed??
 				}
 
 				if(pd.getPacketID() == Math.ceil(pd.getSizeOfData()/B)) //Assuming no packet loss. This will not work with packet loss.
@@ -75,15 +74,18 @@ public class Server implements Runnable
 
 				// Create a packet, we send back to the client to confirm the server received it.
 				// The packet will contain the packetID of the received packet.
+				/*
 				DatagramPacket ackpacket = new DatagramPacket(ByteBuffer.allocate(4).putInt(pd.getPacketID()).array(), 4, receivedPacket
 						.getAddress(), receivedPacket.getPort());
 				serverSocket.send(ackpacket);
+				*/
 			}
 			catch(IOException e)
 			{
 				e.printStackTrace();
 			}
 		}
+		stop();
 	}
 
 	public void stop()
