@@ -146,7 +146,7 @@ public class Client
 
     private void receiveAcknowledgements(boolean[] slidingWindow)
     {
-        while(true)
+        while(!allPacketsReceived)
         {
             try
             {
@@ -162,7 +162,7 @@ public class Client
             }
             catch (SocketException e)
             {
-                if(e.getMessage().equals("socket closed"))
+                if(e.getMessage().toLowerCase().contentEquals("socket closed"))
                 {
                     break;
                 }
