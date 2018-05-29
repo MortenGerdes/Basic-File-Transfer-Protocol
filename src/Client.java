@@ -53,11 +53,6 @@ public class Client
         slidingWindow = new boolean[amountOfPackets + 1];
         long[] timeStamps = new long[amountOfPackets + 1];
 
-        for (int i = 0; i < W; i++)
-        {
-            slidingWindow[i] = false;
-        }
-
         System.out.println(TAG + "Size of File: " + file.length() + "bytes");
 
         for (int i = 0; i < we; i++)//First off, we creates every packet in our SlidingWindow.
