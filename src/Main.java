@@ -2,7 +2,6 @@ import java.io.IOException;
 
 public class Main
 {
-
 	public static void main(String[] args) throws IOException, InterruptedException
 	{
 		Server server = new Server(1338);
@@ -12,7 +11,7 @@ public class Main
 		Thread.sleep(2000);
 
 		Client client = new Client(1337, 1338);
-		client.connect();
+		client.sendFile();
 		t.join();
 	}
 }
