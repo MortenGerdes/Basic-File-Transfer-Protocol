@@ -60,7 +60,7 @@ public class Client
 
         System.out.println(TAG + "Size of File: " + file.length() + "bytes");
 
-        for (int i = 0; i < we; i++)//First off, we createe every packet in our SlidingWindow.
+        for (int i = 0; i < we; i++)//First off, we creates every packet in our SlidingWindow.
         {
             createDatagramPacket(IPAddress, fileBuffer, i);
         }
@@ -148,10 +148,6 @@ public class Client
     {
         while(true)
         {
-            if(clientSocket.isClosed())
-            {
-                continue;
-            }
             try
             {
                 byte[] ackData = new byte[8];
