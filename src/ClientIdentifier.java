@@ -32,8 +32,8 @@ public class ClientIdentifier
     @Override
     public boolean equals(Object o)
     {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if(this == o) return true;
+        if(o == null || getClass() != o.getClass()) return false;
         ClientIdentifier that = (ClientIdentifier) o;
         return clientRandomNumber == that.clientRandomNumber &&
                 clientPort == that.clientPort &&

@@ -18,12 +18,12 @@ public class Client
     boolean allPacketsReceived = false;
     private volatile boolean[] slidingWindow; // Securing thread safety
     private int R;
-    private int ip;
     private int clientPort;
     private int serverPort;
-    private int B = 4;
+    private int B = 5;
     private int W = 6;
     private int timeout = 50;
+    private int sendChance = 99;
     private File file;
     private Random random;
     private List<DatagramPacket> packetList;
@@ -34,16 +34,15 @@ public class Client
     {
         this.random = new Random();
         this.R = random.nextInt(100);
-        this.ip = this.ip;
         this.clientPort = clientPort;
         this.serverPort = serverPort;
     }
 
-    public void sendFile() throws IOException, InterruptedException
+    public void sendFile() throws IOException
     {
         clientSocket = new DatagramSocket(clientPort);
         InetAddress IPAddress = InetAddress.getByName("localhost");
-        file = new File("hello");
+        file = new File("hello.png");
         packetList = new ArrayList<>();
         ByteBuffer fileBuffer = ByteBuffer.wrap(Files.readAllBytes(file.toPath()));
 
@@ -60,56 +59,66 @@ public class Client
         });
         receivingThread.start();
 
-        for (int i = 0; i < we; i++)//First off, we creates every packet in our SlidingWindow.
+        for(int i = 0; i < we; i++)//First off, we create every packet in our SlidingWindow.
         {
             createDatagramPacket(IPAddress, fileBuffer, i);
-            clientSocket.send(packetList.get(i));
+            if(new Random().nextInt(100) < sendChance)
+            {
+                clientSocket.send(packetList.get(i));
+            }
         }
 
-        while (!allPacketsReceived)
+        while(!allPacketsReceived)
         {
-            for (int i = wb; i < we; i++)
+            for(int i = wb; i < we; i++)
             {
                 boolean timedOutAndNotAcknowledged = System.currentTimeMillis() - timeStamps[i] > timeout && !slidingWindow[i];
                 boolean notTimedOutAndNotAcknowledged = !slidingWindow[i] && System.currentTimeMillis() - timeStamps[i] < timeout;
 
-                if (notTimedOutAndNotAcknowledged)
+                if(notTimedOutAndNotAcknowledged)
                 {
                     //System.out.println(TAG + "Packet #" + i + " not yet acknowledged!");
                     continue;
                 }
 
-                if (timedOutAndNotAcknowledged)
+                if(timedOutAndNotAcknowledged)
                 {
                     //System.out.println(TAG + "Packet #" + i + " timed out");
                     timeStamps[i] = System.currentTimeMillis();
                     System.out.println(TAG + "Resending packet #" + i + " to server.");
-                    clientSocket.send(packetList.get(i));
+                    if(new Random().nextInt(100) < sendChance)
+                    {
+                        clientSocket.send(packetList.get(i));
+                    }
                 }
             }
 
-            if (slidingWindow[wb])
+            if(slidingWindow[wb])
             {
                 wb++;
                 we++;
 
-                if (we > amountOfPackets+1)
+                if(we > amountOfPackets + 1)
                 {
-                    we = amountOfPackets+1;
+                    we = amountOfPackets + 1;
                 }
                 createDatagramPacket(IPAddress, fileBuffer, we - 1);
-                clientSocket.send(packetList.get(packetList.size()-1));
+
+                if(new Random().nextInt(100) < sendChance)
+                {
+                    clientSocket.send(packetList.get(packetList.size() - 1));
+                }
             }
 
             allPacketsReceived = true;
-            for (boolean b : slidingWindow)
+            for(boolean b : slidingWindow)
             {
-                if (!b)
+                if(!b)
                 {
                     allPacketsReceived = false;
                 }
             }
-            if (allPacketsReceived)
+            if(allPacketsReceived)
             {
                 System.out.println(TAG + "All packets sent and acknowledged!");
             }
@@ -130,14 +139,17 @@ public class Client
         packetBuffer.putLong(file.length());
         packetBuffer.putInt(packetID);
 
-        if (packetID == Math.ceil(file.length() / B))
+        if(packetID == Math.ceil(file.length() / B))
         {
-            System.out.println(TAG + "Sends final packet #" + packetID + " from " + from + " to " + fileBuffer.array().length);
-            packetBuffer.put(Arrays.copyOfRange(fileBuffer.array(), from, fileBuffer.array().length));
+            //System.out.println(TAG + "Sends final packet #" + packetID + " from " + from + " to " + fileBuffer.array().length);
+            long tempSize = (long) (Math.ceil(file.length() / B) * B);
+            long uBytes = tempSize - file.length();
+
+            packetBuffer.put(Arrays.copyOfRange(fileBuffer.array(), from, from + (16 + Math.toIntExact(B - uBytes))));
             packetList.add(new DatagramPacket(packetBuffer.array(), size, IPAddress, serverPort));
         } else
         {
-            System.out.println(TAG + "Created packet #" + packetID + " from " + from + " to " + to);
+            //System.out.println(TAG + "Created packet #" + packetID + " from " + from + " to " + to);
             packetBuffer.put(Arrays.copyOfRange(fileBuffer.array(), from, to));
             packetList.add(new DatagramPacket(packetBuffer.array(), size, IPAddress, serverPort));
         }
@@ -152,15 +164,15 @@ public class Client
                 byte[] ackData = new byte[8];
                 DatagramPacket ackPacket = new DatagramPacket(ackData, ackData.length);
                 clientSocket.receive(ackPacket);
-                System.out.println(TAG + "Received some packet");
+                //System.out.println(TAG + "Received some packet");
                 ClientPacketDecoder pd = new ClientPacketDecoder(ByteBuffer.wrap(ackPacket.getData()));
-                if (pd.getRandomNumber() == R)
+                if(pd.getRandomNumber() == R)
                 {
-                    System.out.println(TAG + "Received ack packet " + pd.getPacketID() + " from server.");
+                    //System.out.println(TAG + "Received ack packet " + pd.getPacketID() + " from server.");
                     slidingWindow[pd.getPacketID()] = true;
                 }
             }
-            catch (SocketException e)
+            catch(SocketException e)
             {
                 if(e.getMessage().toLowerCase().contentEquals("socket closed"))
                 {
@@ -168,7 +180,7 @@ public class Client
                 }
                 e.printStackTrace();
             }
-            catch (IOException e)
+            catch(IOException e)
             {
                 e.printStackTrace();
             }

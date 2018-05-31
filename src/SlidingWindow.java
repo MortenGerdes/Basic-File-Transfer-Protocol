@@ -9,6 +9,7 @@ public class SlidingWindow
 
     private boolean[] data;
     private HashMap<Integer, DatagramPacket> packetsInWindow;
+
     public SlidingWindow(int dataSize, int windowSize)
     {
         this.data = new boolean[dataSize];
@@ -20,10 +21,10 @@ public class SlidingWindow
 
     public void incrementBoundaries()
     {
-        wb = wb+1;
-        we = we+1;
+        wb = wb + 1;
+        we = we + 1;
 
-        packetsInWindow.remove(0); // We don't need this packet anymore
+        //packetsInWindow.remove(0); // We don't need this packet anymore
     }
 
     public void incrementBoundaries(int i)
