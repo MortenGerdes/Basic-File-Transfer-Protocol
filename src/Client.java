@@ -39,7 +39,7 @@ public class Client
         this.serverPort = serverPort;
     }
 
-    public void sendFile() throws IOException
+    public void sendFile() throws IOException, InterruptedException
     {
         clientSocket = new DatagramSocket(clientPort);
         InetAddress IPAddress = InetAddress.getByName("localhost");
@@ -55,15 +55,16 @@ public class Client
 
         System.out.println(TAG + "Size of File: " + file.length() + "bytes");
 
-        for (int i = 0; i < we; i++)//First off, we creates every packet in our SlidingWindow.
-        {
-            createDatagramPacket(IPAddress, fileBuffer, i);
-        }
-
         receivingThread = new Thread(() -> {
             receiveAcknowledgements(slidingWindow);
         });
         receivingThread.start();
+
+        for (int i = 0; i < we; i++)//First off, we creates every packet in our SlidingWindow.
+        {
+            createDatagramPacket(IPAddress, fileBuffer, i);
+            clientSocket.send(packetList.get(i));
+        }
 
         while (!allPacketsReceived)
         {
@@ -72,17 +73,17 @@ public class Client
                 boolean timedOutAndNotAcknowledged = System.currentTimeMillis() - timeStamps[i] > timeout && !slidingWindow[i];
                 boolean notTimedOutAndNotAcknowledged = !slidingWindow[i] && System.currentTimeMillis() - timeStamps[i] < timeout;
 
-                System.out.println(TAG + "Sending packet #" + i + " to server.");
                 if (notTimedOutAndNotAcknowledged)
                 {
-                    System.out.println(TAG + "Packet #" + i + " not yet acknowledged!");
+                    //System.out.println(TAG + "Packet #" + i + " not yet acknowledged!");
                     continue;
                 }
 
                 if (timedOutAndNotAcknowledged)
                 {
-                    System.out.println(TAG + "Packet #" + i + " timed out");
+                    //System.out.println(TAG + "Packet #" + i + " timed out");
                     timeStamps[i] = System.currentTimeMillis();
+                    System.out.println(TAG + "Resending packet #" + i + " to server.");
                     clientSocket.send(packetList.get(i));
                 }
             }
@@ -97,6 +98,7 @@ public class Client
                     we = amountOfPackets+1;
                 }
                 createDatagramPacket(IPAddress, fileBuffer, we - 1);
+                clientSocket.send(packetList.get(packetList.size()-1));
             }
 
             allPacketsReceived = true;
@@ -108,7 +110,9 @@ public class Client
                 }
             }
             if (allPacketsReceived)
+            {
                 System.out.println(TAG + "All packets sent and acknowledged!");
+            }
         }
         receivingThread.interrupt();
         clientSocket.close();
@@ -141,17 +145,18 @@ public class Client
 
     private void receiveAcknowledgements(boolean[] slidingWindow)
     {
-        while(!allPacketsReceived)
+        while(true)// This might break on Mac???
         {
             try
             {
                 byte[] ackData = new byte[8];
                 DatagramPacket ackPacket = new DatagramPacket(ackData, ackData.length);
                 clientSocket.receive(ackPacket);
+                System.out.println(TAG + "Received some packet");
                 ClientPacketDecoder pd = new ClientPacketDecoder(ByteBuffer.wrap(ackPacket.getData()));
                 if (pd.getRandomNumber() == R)
                 {
-                    System.out.println(TAG + "Received packet #" + pd.getPacketID() + " from server.");
+                    System.out.println(TAG + "Received ack packet " + pd.getPacketID() + " from server.");
                     slidingWindow[pd.getPacketID()] = true;
                 }
             }

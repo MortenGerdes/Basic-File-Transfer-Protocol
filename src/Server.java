@@ -1,7 +1,4 @@
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -20,8 +17,11 @@ public class Server implements Runnable
     private HashMap<ClientIdentifier, SlidingWindow> clients;
     private DatagramSocket serverSocket;
     private static final String TAG = "[SERVER] ";
+    File file = new File("output");
+    FileWriter fw = new FileWriter(file);
+    BufferedWriter bw = new BufferedWriter(fw);
 
-    public Server(int port)
+    public Server(int port) throws IOException
     {
         try
         {
@@ -37,55 +37,17 @@ public class Server implements Runnable
     @Override
     public void run()
     {
-        int W = 6;
-        int wb = 0;
-        int we = W - 1;
         System.out.println(TAG + "Starting server...");
         running = true;
-        nextPacketID = 0;
-        FileOutputStream fos = null;
-
-        try
-        {
-            fos = new FileOutputStream("test");
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
-
         while (running)
         {
             try
             {
-                ServerPacketDecoder pd;
                 DatagramPacket receivedPacket = new DatagramPacket(buf, buf.length);
                 System.out.println(TAG + "Listening for packets");
                 serverSocket.receive(receivedPacket);
-                pd = new ServerPacketDecoder(ByteBuffer.wrap(receivedPacket.getData()));
-                System.out.println(TAG + "Got Packet with ID " + (pd.getPacketID()));
-
-                if (pd.getPacketID() >= wb && pd.getPacketID() <= we)
-                {
-                    System.out.println(TAG + "Received text: " + new String(pd.getData()));
-                    if (pd.getPacketID() == Math.ceil(pd.getSizeOfData() / B))
-                    { //Assuming no packet loss. This will not work with packet loss.
-                        //fos.flush();
-                        System.out.println(TAG + pd.getData().length);
-                        fos.write(pd.getData());
-                        running = false;
-                    } else
-                    {
-                        fos.write(pd.getData());
-                    }
-
-
-                    if (pd.getPacketID() == wb)
-                    {
-                        wb++;
-                        we++;
-                    }
-                }
+                System.out.println(TAG + "Got packet");
+                handleReceivedPacket(receivedPacket);
 
                 /*if (pd.getPacketID() == nextPacketID) {
                     System.out.println(TAG + "went here 1");
@@ -133,6 +95,7 @@ public class Server implements Runnable
     public  void handleReceivedPacket(DatagramPacket packet) throws IOException
     {
         ServerPacketDecoder pd = new ServerPacketDecoder(ByteBuffer.wrap(packet.getData()));
+        System.out.println(TAG + "Got Packet with ID " + (pd.getPacketID()));
         int clientRandomNumber = pd.getRandomNumber();
         int clientPort = packet.getPort();
         InetAddress clientIP = packet.getAddress();
@@ -141,38 +104,48 @@ public class Server implements Runnable
 
         if(!clients.containsKey(ci))
         {
-            clients.put(ci, new SlidingWindow((int) Math.ceil(pd.getData().length / B), W));
+            System.out.println("Created SW with datasize = " + Math.ceil(pd.getSizeOfData() / B)+1);
+            clients.put(ci, new SlidingWindow((int) Math.ceil(pd.getSizeOfData() / B)+1, W));
         }
 
         sw = clients.get(ci);
+        System.out.println("Got packetID " + pd.getPacketID() + " and limits are " + sw.wb + " - " + sw.we);
         if(sw.isPacketIDWithinWindow(pd.getPacketID()))
         {
             if(sw.isPacketAcknowledged(pd.getPacketID())) // Already got this packet
             {
+                sendAckknowledgeToClient(pd, packet.getAddress(), packet.getPort());
                 return;
             }
 
             sw.setPacketAcknowledged(packet, pd);
             if(pd.getPacketID() == sw.wb)// Latest packet we need to write, so we can push the window
             {
-                File file = new File("" + clientRandomNumber + clientIP + clientPort);
-                FileOutputStream fos = new FileOutputStream(file);
-
+                //File file = new File("" + clientRandomNumber + clientIP + clientPort);
                 int pastI = pd.getPacketID()-1;
                 for(Integer i: sw.getPacketsInWindow().keySet())
                 {
-                    if(i != pastI+1){ break; }
-                    fos.write(sw.getPacketsInWindow().get(i).getData());
-                    sw.incrementBoundaries(); // TODO This will not work! We cannot edit this list while traversing it. Fix!
+                    if(i != pastI+1)
+                    {
+                        continue;
+                    }
+                    ServerPacketDecoder localPD = new ServerPacketDecoder(ByteBuffer.wrap(sw.getPacketsInWindow().get(i).getData()));
+                    pastI = i;
+                    bw.write(new String(localPD.getData()));
+                    sw.incrementBoundaries();
                 }
+                bw.flush();
             }
-
-            //Send Acknowledge packet back to the client.
-            ByteBuffer byteBuffer = ByteBuffer.allocate(8).putInt(pd.getRandomNumber());
-            byteBuffer.putInt(pd.getPacketID());
-            DatagramPacket ackPacket = new DatagramPacket(byteBuffer.array(), 8, packet
-                    .getAddress(), packet.getPort());
-            serverSocket.send(ackPacket);
+            sendAckknowledgeToClient(pd, packet.getAddress(), packet.getPort());
         }
+    }
+
+    public void sendAckknowledgeToClient(PacketDecoder pd, InetAddress ip, int port) throws IOException
+    {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(8).putInt(pd.getRandomNumber());
+        byteBuffer.putInt(pd.getPacketID());
+        DatagramPacket ackPacket = new DatagramPacket(byteBuffer.array(), 8, ip, port);
+        System.out.println(TAG + "Sending ack to client");
+        serverSocket.send(ackPacket);
     }
 }

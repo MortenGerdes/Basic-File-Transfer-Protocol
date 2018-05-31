@@ -4,8 +4,8 @@ import java.util.HashMap;
 public class SlidingWindow
 {
     int W;
-    int wb = 0;
-    int we = W - 1;
+    int wb;
+    int we;
 
     private boolean[] data;
     private HashMap<Integer, DatagramPacket> packetsInWindow;
@@ -14,6 +14,8 @@ public class SlidingWindow
         this.data = new boolean[dataSize];
         this.W = windowSize;
         this.packetsInWindow = new HashMap<>();
+        this.wb = 0;
+        this.we = windowSize - this.wb;
     }
 
     public void incrementBoundaries()
