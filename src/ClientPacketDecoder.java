@@ -1,7 +1,7 @@
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-public class ClientPacketDecoder
+public class ClientPacketDecoder implements PacketDecoder
 {
 	ByteBuffer bb;
 
