@@ -7,12 +7,11 @@ import java.nio.ByteBuffer;
 import java.nio.file.*;
 import java.util.HashMap;
 
-public class Server implements Runnable
-{
+public class Server implements Runnable {
     private static final String TAG = "[SERVER] ";
     private boolean running = false;
-    private int B = 200;
-    private int W = 6;
+    private int B;
+    private int W;
     private int nextPacketID;
     private byte[] buf = new byte[4 + 8 + 4 + B];
     private HashMap<ClientIdentifier, SlidingWindow> clients;
@@ -20,57 +19,45 @@ public class Server implements Runnable
     private DatagramSocket serverSocket;
 
 
-    public Server(int port) throws IOException
-    {
-        try
-        {
+    public Server(int port, int B, int W) throws IOException {
+        try {
             serverSocket = new DatagramSocket(port);
             clients = new HashMap<>();
             clientFiles = new HashMap<>();
-        }
-        catch(SocketException e)
-        {
+            this.B = B;
+            this.W = W;
+        } catch (SocketException e) {
             e.printStackTrace();
         }
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         System.out.println(TAG + "Starting server...");
         running = true;
-        while(running)
-        {
-            try
-            {
+        while (running) {
+            try {
                 DatagramPacket receivedPacket = new DatagramPacket(buf, buf.length);
                 System.out.println(TAG + "Listening for packets");
                 serverSocket.receive(receivedPacket);
                 handleReceivedPacket(receivedPacket);
-            }
-            catch(IOException e)
-            {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         stop();
     }
 
-    public void stop()
-    {
-        try
-        {
+    public void stop() {
+        try {
             running = false;
             serverSocket.close();
-        }
-        catch(Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void handleReceivedPacket(DatagramPacket packet) throws IOException
-    {
+    public void handleReceivedPacket(DatagramPacket packet) throws IOException {
         ServerPacketDecoder pd = new ServerPacketDecoder(ByteBuffer.wrap(packet.getData()));
         System.out.println(TAG + "Got Packet with ID " + (pd.getPacketID()));
         int clientRandomNumber = pd.getRandomNumber();
@@ -80,13 +67,11 @@ public class Server implements Runnable
         SlidingWindow sw;
         Path path;
 
-        if(!clients.containsKey(ci))
-        {
+        if (!clients.containsKey(ci)) {
             clients.put(ci, new SlidingWindow((int) Math.ceil(pd.getSizeOfData() / B) + 1, W));
         }
 
-        if(!clientFiles.containsKey(ci))
-        {
+        if (!clientFiles.containsKey(ci)) {
             clientFiles.put(ci, new String("" + ci.getClientRandomNumber() + "-" + ci.getClientPort()));
         }
 
@@ -94,8 +79,7 @@ public class Server implements Runnable
         path = Paths.get(clientFiles.get(ci));
 
         //System.out.println("Got packetID " + pd.getPacketID() + " and limits are " + sw.wb + " - " + sw.we);
-        if(!sw.isPacketIDWithinWindow(pd.getPacketID()))
-        {
+        if (!sw.isPacketIDWithinWindow(pd.getPacketID())) {
             return;
         }
         /*if (sw.isPacketAcknowledged(pd.getPacketID())) // Already got this packet
@@ -105,27 +89,25 @@ public class Server implements Runnable
         }*/
 
         sw.setPacketAcknowledged(packet, pd);
-        if(pd.getPacketID() != sw.wb)// Latest packet we need to write, so we can push the window
+        if (pd.getPacketID() != sw.wb)// Latest packet we need to write, so we can push the window
         {
             return;
         }
         int pastI = pd.getPacketID() - 1;
-        for(Integer i : sw.getPacketsInWindow().keySet())
-        {
+        for (Integer i : sw.getPacketsInWindow().keySet()) {
             ServerPacketDecoder localPD = new ServerPacketDecoder(ByteBuffer.wrap(sw.getPacketsInWindow().get(i).getData()));
-
-            if(localPD.getPacketID() != pastI + 1)
-            {
+            System.out.println("Raw data: " + sw.getPacketsInWindow().get(i).getData() + ": " + new String(sw.getPacketsInWindow().get(i).getData()));
+            if (localPD.getPacketID() != pastI + 1) {
                 continue;
             }
             pastI = localPD.getPacketID();
 
             OpenOption oo = StandardOpenOption.CREATE_NEW;
-            if(Files.exists(path))
-            {
+            if (Files.exists(path)) {
                 oo = StandardOpenOption.APPEND;
             }
             System.out.println(TAG + "Writing packet with ID = " + localPD.getPacketID());
+            System.out.println("DATA: " + new String(localPD.getData()));
             Files.write(path, localPD.getData(), oo);
             sw.incrementBoundaries();
 
@@ -141,8 +123,7 @@ public class Server implements Runnable
         sw.getPacketsInWindow().entrySet().removeIf(entry -> !sw.isPacketIDWithinWindow(entry.getKey()));
     }
 
-    public void sendAckknowledgeToClient(PacketDecoder pd, InetAddress ip, int port) throws IOException
-    {
+    public void sendAckknowledgeToClient(PacketDecoder pd, InetAddress ip, int port) throws IOException {
         ByteBuffer byteBuffer = ByteBuffer.allocate(8).putInt(pd.getRandomNumber());
         byteBuffer.putInt(pd.getPacketID());
         DatagramPacket ackPacket = new DatagramPacket(byteBuffer.array(), 8, ip, port);

@@ -1,5 +1,4 @@
-public interface PacketDecoder
-{
+public interface PacketDecoder {
     int getRandomNumber();
 
     int getPacketID();
