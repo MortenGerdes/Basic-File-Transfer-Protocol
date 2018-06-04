@@ -20,10 +20,10 @@ public class Client
     private int R;
     private int clientPort;
     private int serverPort;
-    private int B = 5;
+    private int B = 200;
     private int W = 6;
     private int timeout = 50;
-    private int sendChance = 99;
+    private int sendChance = 100;
     private File file;
     private Random random;
     private List<DatagramPacket> packetList;
@@ -42,7 +42,7 @@ public class Client
     {
         clientSocket = new DatagramSocket(clientPort);
         InetAddress IPAddress = InetAddress.getByName("localhost");
-        file = new File("hello.png");
+        file = new File("hello.jpg");
         packetList = new ArrayList<>();
         ByteBuffer fileBuffer = ByteBuffer.wrap(Files.readAllBytes(file.toPath()));
 

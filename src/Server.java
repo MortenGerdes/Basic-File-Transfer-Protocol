@@ -9,10 +9,9 @@ import java.util.HashMap;
 
 public class Server implements Runnable
 {
-
     private static final String TAG = "[SERVER] ";
     private boolean running = false;
-    private int B = 5;
+    private int B = 200;
     private int W = 6;
     private int nextPacketID;
     private byte[] buf = new byte[4 + 8 + 4 + B];
@@ -129,9 +128,17 @@ public class Server implements Runnable
             System.out.println(TAG + "Writing packet with ID = " + localPD.getPacketID());
             Files.write(path, localPD.getData(), oo);
             sw.incrementBoundaries();
+
             //sw.getPacketsInWindow().remove(i); // TODO Remember to clean up after you.
         }
+
         sendAckknowledgeToClient(pd, packet.getAddress(), packet.getPort());
+
+        /**
+         * We have to clean up after ourselves. Else the list get's proportionally large
+         * with the amount of packets sent.
+         */
+        sw.getPacketsInWindow().entrySet().removeIf(entry -> !sw.isPacketIDWithinWindow(entry.getKey()));
     }
 
     public void sendAckknowledgeToClient(PacketDecoder pd, InetAddress ip, int port) throws IOException

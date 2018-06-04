@@ -22,7 +22,7 @@ public class Main
             }
         }).start();
 
-        new Thread(() -> {
+/*        new Thread(() -> {
             Client client2 = new Client(1339, 1338);
             try
             {
@@ -32,7 +32,7 @@ public class Main
             {
                 e.printStackTrace();
             }
-        }).start();
+        }).start();*/
 
         t.join();
     }
