@@ -11,7 +11,7 @@ public class Server implements Runnable
 {
     private static final String TAG = "[SERVER] ";
     private boolean running = false;
-    private int B = 200;
+    private int B = 1000;
     private int W = 6;
     private byte[] buf = new byte[4 + 8 + 4 + B];
     private HashMap<ClientIdentifier, SlidingWindow> clients;

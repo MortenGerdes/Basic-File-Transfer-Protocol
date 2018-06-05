@@ -20,10 +20,10 @@ public class Client
     private int R;
     private int clientPort;
     private int serverPort;
-    private int B = 200;
+    private int B = 1000;
     private int W = 6;
     private int timeout = 50;
-    private int sendChance = 50;
+    private int sendChance = 100;
     private File file;
     private Random random;
     private List<DatagramPacket> packetList;
@@ -42,7 +42,7 @@ public class Client
     {
         clientSocket = new DatagramSocket(clientPort);
         InetAddress IPAddress = InetAddress.getByName("localhost");
-        file = new File("hello.jpg");
+        file = new File("jack.png");
         packetList = new ArrayList<>();
         ByteBuffer fileBuffer = ByteBuffer.wrap(Files.readAllBytes(file.toPath()));
 
@@ -61,6 +61,11 @@ public class Client
 
         for(int i = 0; i < we; i++)//First off, we create every packet in our SlidingWindow.
         {
+            boolean SlidingWindowLargerThanPacketRequired = (i >= Math.ceil(file.length() / B));
+            if(SlidingWindowLargerThanPacketRequired)
+            {
+                break;
+            }
             createDatagramPacket(IPAddress, fileBuffer, i);
             if(new Random().nextInt(100) < sendChance)
             {
@@ -74,6 +79,12 @@ public class Client
             {
                 boolean timedOutAndNotAcknowledged = System.currentTimeMillis() - timeStamps[i] > timeout && !slidingWindow[i];
                 boolean notTimedOutAndNotAcknowledged = !slidingWindow[i] && System.currentTimeMillis() - timeStamps[i] < timeout;
+                boolean SlidingWindowLargerThanPacketRequired = (i >= Math.ceil(file.length() / B));
+
+                if(SlidingWindowLargerThanPacketRequired)
+                {
+                    break;
+                }
 
                 if(notTimedOutAndNotAcknowledged)
                 {
@@ -132,7 +143,7 @@ public class Client
         byte[] sendData = new byte[1024 + B];
         int from = (packetID * B);
         int to = (((packetID + 1) * B));
-        int size = (int) (4 + 8 + 4 + Math.ceil(file.length() / B));
+        //int size = (int) (4 + 8 + 4 + Math.ceil(file.length() / B));
 
         ByteBuffer packetBuffer = ByteBuffer.wrap(sendData);
         packetBuffer.putInt(R);
@@ -147,12 +158,13 @@ public class Client
 
             packetBuffer.put(Arrays.copyOfRange(fileBuffer.array(), from, from + (16 + Math.toIntExact(B - uBytes))));
             packetBuffer.put(Arrays.copyOfRange(fileBuffer.array(), from, to));
-            packetList.add(new DatagramPacket(packetBuffer.array(), size, IPAddress, serverPort));
+            packetList.add(new DatagramPacket(packetBuffer.array(), packetBuffer.array().length, IPAddress, serverPort));
         } else
         {
             //System.out.println(TAG + "Created packet #" + packetID + " from " + from + " to " + to);
+            System.out.println("Copying packet: " + packetID + "/" + Math.ceil(file.length() / B));
             packetBuffer.put(Arrays.copyOfRange(fileBuffer.array(), from, to));
-            packetList.add(new DatagramPacket(packetBuffer.array(), size, IPAddress, serverPort));
+            packetList.add(new DatagramPacket(packetBuffer.array(), packetBuffer.array().length, IPAddress, serverPort));
         }
     }
 
