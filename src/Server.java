@@ -11,20 +11,24 @@ public class Server implements Runnable
 {
     private static final String TAG = "[SERVER] ";
     private boolean running = false;
-    private int B = 1000;
-    private int W = 6;
-    private byte[] buf = new byte[4 + 8 + 4 + B];
+    private int B;
+    private int W;
+    private byte[] buf;
     private HashMap<ClientIdentifier, SlidingWindow> clients;
     private HashMap<ClientIdentifier, String> clientFiles;
     private DatagramSocket serverSocket;
 
-    public Server(int port)
+    public Server(int port, int B, int W)
     {
         try
         {
             serverSocket = new DatagramSocket(port);
             clients = new HashMap<>();
             clientFiles = new HashMap<>();
+            this.B = B;
+            this.W = W;
+            buf = new byte[4 + 8 + 4 + this.B];
+
         }
         catch(SocketException e)
         {

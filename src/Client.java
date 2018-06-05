@@ -20,29 +20,34 @@ public class Client
     private int R;
     private int clientPort;
     private int serverPort;
-    private int B = 1000;
-    private int W = 6;
+    private int B;
+    private int W;
     private int timeout = 50;
-    private int sendChance = 100;
+    private int sendChance;
     private File file;
+    private String filename;
     private Random random;
     private List<DatagramPacket> packetList;
     private DatagramSocket clientSocket;
     private Thread receivingThread;
 
-    public Client(int clientPort, int serverPort)
+    public Client(int serverPort, int B, int W, int sendChance, String filename)
     {
         this.random = new Random();
         this.R = random.nextInt(100);
-        this.clientPort = clientPort;
         this.serverPort = serverPort;
+        this.B = B;
+        this.W = W;
+        this.sendChance = sendChance;
+        this.filename = filename;
+
     }
 
     public void sendFile() throws IOException
     {
         clientSocket = new DatagramSocket(clientPort);
         InetAddress IPAddress = InetAddress.getByName("localhost");
-        file = new File("jack.png");
+        file = new File("image.jpg");
         packetList = new ArrayList<>();
         ByteBuffer fileBuffer = ByteBuffer.wrap(Files.readAllBytes(file.toPath()));
 
@@ -140,7 +145,7 @@ public class Client
 
     private void createDatagramPacket(InetAddress IPAddress, ByteBuffer fileBuffer, int packetID)
     {
-        byte[] sendData = new byte[1024 + B];
+        byte[] sendData = new byte[2048 + B];
         int from = (packetID * B);
         int to = (((packetID + 1) * B));
         //int size = (int) (4 + 8 + 4 + Math.ceil(file.length() / B));
