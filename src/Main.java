@@ -16,10 +16,11 @@ public class Main
             int W = Integer.parseInt(args[3]);
             int sendChance = Integer.parseInt(args[4]);
             String filename = args[5];
+            String ip = args[6];
 
             new Thread(() -> {
                 //Client client1 = new Client(clientPort, serverPort, B, W, filename);
-                Client client1 = new Client(serverPort, B, W, sendChance, filename);
+                Client client1 = new Client(ip, serverPort, B, W, sendChance, filename);
                 try {
                     client1.sendFile();
                 } catch (IOException e) {

@@ -98,6 +98,7 @@ public class Server implements Runnable
         //System.out.println("Got packetID " + pd.getPacketID() + " and limits are " + sw.wb + " - " + sw.we);
         if(!sw.isPacketIDWithinWindow(pd.getPacketID()))
         {
+            System.out.println("Went here");
             return;
         }
         /*if (sw.isPacketAcknowledged(pd.getPacketID())) // Already got this packet

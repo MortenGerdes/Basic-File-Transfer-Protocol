@@ -25,13 +25,14 @@ public class Client
     private int timeout = 50;
     private int sendChance;
     private File file;
+    private String ip;
     private String filename;
     private Random random;
     private List<DatagramPacket> packetList;
     private DatagramSocket clientSocket;
     private Thread receivingThread;
 
-    public Client(int serverPort, int B, int W, int sendChance, String filename)
+    public Client(String ip, int serverPort, int B, int W, int sendChance, String filename)
     {
         this.random = new Random();
         this.R = random.nextInt(100);
@@ -40,14 +41,14 @@ public class Client
         this.W = W;
         this.sendChance = sendChance;
         this.filename = filename;
-
+        this.ip = ip;
     }
 
     public void sendFile() throws IOException
     {
         clientSocket = new DatagramSocket(clientPort);
         InetAddress IPAddress = InetAddress.getByName("localhost");
-        file = new File("image.jpg");
+        file = new File(filename);
         packetList = new ArrayList<>();
         ByteBuffer fileBuffer = ByteBuffer.wrap(Files.readAllBytes(file.toPath()));
 
