@@ -1,6 +1,9 @@
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-
+/**
+ * This class handles the decoding of packets sent from the client to the server.
+ * It has some default packet protocol, which it assumes as a pre-condition.
+ */
 public class ServerPacketDecoder implements PacketDecoder {
     ByteBuffer bb;
 

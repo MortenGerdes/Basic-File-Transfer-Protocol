@@ -4,7 +4,6 @@ public class Main
 {
     public static void main(String[] args) throws IOException, InterruptedException {
 
-
         if (args.length <= 0) {
             System.out.println("You have to pass arguments to the program");
             System.out.println("1. arg: c or s");

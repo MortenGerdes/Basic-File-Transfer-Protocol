@@ -1,5 +1,9 @@
 import java.nio.ByteBuffer;
 
+/**
+ * This class will handling the decoding of the acknowledgement packets sent from the server
+ * to the client.
+ */
 public class ClientPacketDecoder implements PacketDecoder {
     ByteBuffer bb;
 

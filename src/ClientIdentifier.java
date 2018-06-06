@@ -1,6 +1,10 @@
 import java.net.InetAddress;
 import java.util.Objects;
 
+/**
+ * This class' purpose is to act as a unique identifier for a client connecting
+ * to the server. It can then be stored in a map as the key.
+ */
 public class ClientIdentifier {
     private int clientRandomNumber;
     private InetAddress clientIP;

@@ -1,6 +1,10 @@
 import java.net.DatagramPacket;
 import java.util.HashMap;
 
+/**
+ * A sliding window in object form. This will handle the "window" in which the server will collect packets
+ * and then put them together in the correct byte order.
+ */
 public class SlidingWindow {
     int W;
     int wb;

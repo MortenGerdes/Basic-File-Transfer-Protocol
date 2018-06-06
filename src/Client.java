@@ -47,7 +47,7 @@ public class Client
     public void sendFile() throws IOException
     {
         clientSocket = new DatagramSocket(clientPort);
-        InetAddress IPAddress = InetAddress.getByName("localhost");
+        InetAddress IPAddress = InetAddress.getByName("localhost"); // Change this with ip to connect to someone else
         file = new File(filename);
         packetList = new ArrayList<>();
         ByteBuffer fileBuffer = ByteBuffer.wrap(Files.readAllBytes(file.toPath()));
